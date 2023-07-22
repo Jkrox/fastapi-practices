@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "fastapi course"
+version = "0.1.0"
+description = "Course to learn FastAPI and make my own API RestFul"
+authors = ["Jkrox <jkrox@protonmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.98.0"
+uvicorn = "^0.22.0"
+pydantic = "^1.10.9"
+pytest = "^7.4.0"
+black = "^23.3.0"
+pyjwt = "^2.7.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,192 @@
+from fastapi import FastAPI, Path, Query, HTTPException, status
+from fastapi.responses import HTMLResponse, JSONResponse
+from pydantic import BaseModel, Field
+from typing import Optional, List
+from jwt_manager import create_token
+import datetime
+
+app = FastAPI()
+app.title = "Documentación test1"
+app.version = "0.0.1"
+
+# --------------------------------------------------------------------------------
+
+movies = [
+    {
+        "id": 1,
+        "title": "Avatar",
+        "overview": "En un exuberante planeta llamado Pandora viven los Na'vi",
+        "year": 2009,
+        "rating": 7.8,
+        "category": "Acción",
+    },
+    {
+        "id": 2,
+        "title": "Avatar 2",
+        "overview": "En un exuberante planeta llamado Pandora viven los Na'vi",
+        "year": 2019,
+        "rating": 9,
+        "category": "Acción",
+    },
+]
+
+# --------------------------------------------------------------------------------
+
+class User(BaseModel):
+    email: str = Field(..., min_length=5, max_length=50)
+    password: str = Field(..., min_length=8, max_length=50)
+    
+
+# --------------------------------------------------------------------------------
+
+
+class Movie(BaseModel):
+    id: Optional[int] = None
+    title: str = Field(..., min_length=1, max_length=25)
+    overview: str = Field(min_length=15, max_length=150)
+    year: int = Field(ge=2000, le=datetime.datetime.now().year)
+    rating: float = Field(ge=1, le=10)
+    category: str = Field(..., min_length=3, max_length=15)
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": 3,
+                "title": "Película: ",
+                "overview": "Descripción de la película: .",
+                "year": 2004,
+                "rating": 9.3,
+                "category": "Drama",
+            },
+            "description": "This is an example of a movie object that can be used in the API.",
+            "externalDocs": {
+                "description": "More information about movies",
+                "url": "https://en.wikipedia.org/wiki/List_of_films_considered_the_best",
+            },
+        }
+
+
+# --------------------------------------------------------------------------------
+
+
+@app.get("/", tags=["Home"])
+def hello():
+    return HTMLResponse("<h1>Hello World</h1>")
+
+
+# --------------------------------------------------------------------------------
+
+
+@app.get(
+    "/movies",
+    tags=["movies"],
+    response_model=List[Movie],
+    status_code=status.HTTP_200_OK,
+)
+def get_movies() -> List[Movie]:
+    return JSONResponse(content=movies)
+
+
+# --------------------------------------------------------------------------------
+
+
+@app.get(
+    "/movies/{id}",
+    tags=["movies"],
+    response_model=Movie,
+    status_code=status.HTTP_200_OK,
+)
+def get_movie(id: int = Path(ge=1, le=200)) -> Movie:
+    for item in movies:
+        if item["id"] == id:
+            return JSONResponse(content=item)
+    return JSONResponse(content=[])
+
+
+# --------------------------------------------------------------------------------
+
+
+@app.get(
+    "/movies/",
+    tags=["movies"],
+    response_model=List[Movie],
+    status_code=status.HTTP_200_OK,
+)
+def get_movies_by_category(
+    category: str = Query(None, min_length=3, max_length=15)
+) -> List[Movie]:
+    data: list = [item for item in movies if item["category"] == category]
+    return JSONResponse(content=data)
+
+
+# --------------------------------------------------------------------------------
+
+
+@app.post(
+    "/movies", tags=["movies"], response_model=dict, status_code=status.HTTP_201_CREATED
+)
+def create_movie(movie: Movie) -> dict:
+    movies.append(movie.dict())
+    return JSONResponse(content={"message": "Movie created"})
+
+
+# --------------------------------------------------------------------------------
+
+
+@app.put(
+    "/movies/{id}", tags=["movies"], response_model=dict, status_code=status.HTTP_200_OK
+)
+def update_movie(id: int, movie: Movie) -> dict:
+    for item in movies:
+        if item["id"] == id:
+            item.update(movie.dict())
+        else:
+            raise HTTPException(status_code=404, detail="Movie not found.")
+    return JSONResponse(content={"message": "Movie modified."})
+
+
+# --------------------------------------------------------------------------------
+
+
+@app.put(
+    "/movies/",
+    tags=["movies"],
+    response_model=List[Movie],
+    status_code=status.HTTP_200_OK,
+)
+def update_movies(ids: List[int], movie: Movie) -> List[Movie]:
+    updated_movies = []
+    found = False
+    for index, item in enumerate(movies):
+        if item["id"] in ids:
+            found = True
+            movies[index] = movie.dict()
+            updated_movies.append(movies[index])
+        else:
+            updated_movies.append(item)
+    if not found:
+        raise HTTPException(status_code=404, detail="Movie not found.")
+    return updated_movies
+
+
+# --------------------------------------------------------------------------------
+
+
+@app.delete(
+    "/movies/{id}", tags=["movies"], response_model=dict, status_code=status.HTTP_200_OK
+)
+def delete_movie(id: int) -> dict:
+    for movie in movies:
+        if movie["id"] == id:
+            movies.remove(movie)
+            return JSONResponse(content={"message": "Movie deleted."})
+    raise HTTPException(status_code=404, detail="Movie not found.")
+
+
+# --------------------------------------------------------------------------------
+# To run the server, try to use the following command:
+# uvicorn main:app --reload --port 5000 --host 0.0.0.0
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="localhost", port=5000, reload=True)
