@@ -2,12 +2,19 @@ from fastapi import FastAPI, Path, Query, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional, List
+
 from jwt_manager import create_token
+from dotenv import load_dotenv
+
 import datetime
+import os
 
 app = FastAPI()
 app.title = "Documentación test1"
 app.version = "0.0.1"
+
+# Load environment variables from .env file
+load_dotenv()
 
 # --------------------------------------------------------------------------------
 
@@ -32,10 +39,11 @@ movies = [
 
 # --------------------------------------------------------------------------------
 
+
 class User(BaseModel):
     email: str = Field(..., min_length=5, max_length=50)
-    password: str = Field(..., min_length=8, max_length=50)
-    
+    password: str = Field(..., min_length=5, max_length=50)
+
 
 # --------------------------------------------------------------------------------
 
@@ -72,6 +80,21 @@ class Movie(BaseModel):
 @app.get("/", tags=["Home"])
 def hello():
     return HTMLResponse("<h1>Hello World</h1>")
+
+
+# --------------------------------------------------------------------------------
+
+
+@app.post("/login", tags=["login"])
+def login(user: User):
+    if user.email == "test@gmail.com" and user.password == "demokeys12345":
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "message": "Login successful",
+                "token": create_token(user.dict(), os.getenv("KEY")),
+            },
+        )
 
 
 # --------------------------------------------------------------------------------
