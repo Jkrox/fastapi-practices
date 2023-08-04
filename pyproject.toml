@@ -15,6 +15,7 @@ pytest = "^7.4.0"
 black = "^23.3.0"
 pyjwt = "^2.7.0"
 python-dotenv = "^1"
+sqlalchemy = "^2.0.19"
 
 
 [build-system]
