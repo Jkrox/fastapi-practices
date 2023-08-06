@@ -3,6 +3,9 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security.http import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from typing import Optional, List
+from config.database import base, engine, session
+from models.movie import Movie as MovieModel
+from fastapi.encoders import jsonable_encoder
 
 from jwt_manager import create_token, validate_token
 from dotenv import load_dotenv
@@ -13,6 +16,8 @@ import os
 app = FastAPI()
 app.title = "Documentación test1"
 app.version = "0.0.1"
+
+base.metadata.create_all(bind=engine)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -41,9 +46,9 @@ movies = [
 # --------------------------------------------------------------------------------
 
 
-class JWTBearer:
+class JWTBearer(HTTPBearer):
     async def __call__(self, request: Request) -> HTTPAuthorizationCredentials | None:
-        auth: HTTPAuthorizationCredentials | None = await HTTPBearer.__call__(request)
+        auth: HTTPAuthorizationCredentials | None = await super().__call__(request)
         data = validate_token(auth.credentials, os.getenv("KEY"))
         if data["email"] == None and data["email"] != "test@gmail.com":
             raise HTTPException(status_code=403, detail="Invalid crendentials")
@@ -120,7 +125,9 @@ def login(user: User):
     dependencies=[Depends(JWTBearer())],
 )
 def get_movies() -> List[Movie]:
-    return JSONResponse(content=movies)
+    db = session()
+    result = db.query(MovieModel).all()
+    return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
 
 # --------------------------------------------------------------------------------
@@ -133,10 +140,11 @@ def get_movies() -> List[Movie]:
     status_code=status.HTTP_200_OK,
 )
 def get_movie(id: int = Path(ge=1, le=200)) -> Movie:
-    for item in movies:
-        if item["id"] == id:
-            return JSONResponse(content=item)
-    return JSONResponse(content=[])
+    db = session()
+    result = db.query(MovieModel).filter(MovieModel.id == id).first()
+    if not result:
+        raise HTTPException(status_code=404, detail="Movie not found.")
+    return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
 
 # --------------------------------------------------------------------------------
@@ -151,8 +159,11 @@ def get_movie(id: int = Path(ge=1, le=200)) -> Movie:
 def get_movies_by_category(
     category: str = Query(None, min_length=3, max_length=15)
 ) -> List[Movie]:
-    data: list = [item for item in movies if item["category"] == category]
-    return JSONResponse(content=data)
+    db = session()
+    result = db.query(MovieModel).filter(MovieModel.category == category).all()
+    if not result:
+        raise HTTPException(status_code=404, detail="Movie not found.")
+    return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
 
 # --------------------------------------------------------------------------------
@@ -162,6 +173,10 @@ def get_movies_by_category(
     "/movies", tags=["movies"], response_model=dict, status_code=status.HTTP_201_CREATED
 )
 def create_movie(movie: Movie) -> dict:
+    db = session()
+    new_movie = MovieModel(**movie.dict())
+    db.add(new_movie)
+    db.commit()
     movies.append(movie.dict())
     return JSONResponse(content={"message": "Movie created"})
 
