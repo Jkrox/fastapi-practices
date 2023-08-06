@@ -76,7 +76,6 @@ class Movie(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "id": 3,
                 "title": "Película: ",
                 "overview": "Descripción de la película: .",
                 "year": 2004,
@@ -188,12 +187,17 @@ def create_movie(movie: Movie) -> dict:
     "/movies/{id}", tags=["movies"], response_model=dict, status_code=status.HTTP_200_OK
 )
 def update_movie(id: int, movie: Movie) -> dict:
-    for item in movies:
-        if item["id"] == id:
-            item.update(movie.dict())
-        else:
-            raise HTTPException(status_code=404, detail="Movie not found.")
-    return JSONResponse(content={"message": "Movie modified."})
+    db = session()
+    result = db.query(MovieModel).filter(MovieModel.id == id).first()
+    if not result:
+        raise HTTPException(status_code=404, detail="Movie not found.")
+    result.title = movie.title
+    result.overview = movie.overview
+    result.year = movie.year
+    result.rating = movie.rating
+    result.category = movie.category
+    db.commit()
+    return JSONResponse(status_code=200, content={"message": "Movie modified."})
 
 
 # --------------------------------------------------------------------------------
