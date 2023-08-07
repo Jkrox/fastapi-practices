@@ -231,11 +231,14 @@ def update_movies(ids: List[int], movie: Movie) -> List[Movie]:
     "/movies/{id}", tags=["movies"], response_model=dict, status_code=status.HTTP_200_OK
 )
 def delete_movie(id: int) -> dict:
-    for movie in movies:
-        if movie["id"] == id:
-            movies.remove(movie)
-            return JSONResponse(content={"message": "Movie deleted."})
-    raise HTTPException(status_code=404, detail="Movie not found.")
+    db = session()
+    result = db.query(MovieModel).filter(MovieModel.id == id).first()
+    if not result:
+        raise HTTPException(status_code=404, detail="Movie not found.")
+
+    db.delete(result)
+    db.commit()
+    return JSONResponse(content={"message": "Movie deleted."})
 
 
 # --------------------------------------------------------------------------------
