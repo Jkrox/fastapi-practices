@@ -1,4 +1,4 @@
-name: Blacf-formatter
+name: Black-formatter
 
 on: [push, pull_request]
 
@@ -6,9 +6,15 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: psf/black@stable
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Black formatter (Apply changes)
+        uses: psf/black@stable
         with:
-          options: "--check --verbose"
-          src: "."
-          version: "23.7.0"
+          args: "."  # Eliminamos "--check" para aplicar cambios automáticamente
+
+      - name: Run Black formatter (Check only)
+        uses: psf/black@stable
+        with:
+          args: "--check ."  # Agregamos "--check" para verificar sin cambios
