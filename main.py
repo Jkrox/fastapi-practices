@@ -1,61 +1,28 @@
-from fastapi import Depends, FastAPI, Path, Query, HTTPException, status, Request
+from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.security.http import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
-from typing import Optional, List
-from config.database import base, engine, session
-from models.movie import Movie as MovieModel
-from fastapi.encoders import jsonable_encoder
+from config.database import base, engine
 from middlewares.error_handler import ErrorHandler
+from routers.movie import movie_router
 
-from jwt_manager import create_token, validate_token
+from utils.jwt_manager import create_token
 from dotenv import load_dotenv
 
-import datetime
 import os
 
 app = FastAPI()
-app.title = "Documentación test1"
-app.version = "0.0.1"
+app.title = "FastAPI CRUD - Movies"
+app.version = "0.0.2"
+app.description = "This is a simple CRUD API application made with FastAPI"
+app.docs_url = "/docs"
 
 app.add_middleware(ErrorHandler)
+app.include_router(movie_router, prefix="/api/v1")
 
 base.metadata.create_all(bind=engine)
 
 # Load environment variables from .env file
 load_dotenv()
-
-# --------------------------------------------------------------------------------
-
-movies = [
-    {
-        "id": 1,
-        "title": "Avatar",
-        "overview": "En un exuberante planeta llamado Pandora viven los Na'vi",
-        "year": 2009,
-        "rating": 7.8,
-        "category": "Acción",
-    },
-    {
-        "id": 2,
-        "title": "Avatar 2",
-        "overview": "En un exuberante planeta llamado Pandora viven los Na'vi",
-        "year": 2019,
-        "rating": 9,
-        "category": "Acción",
-    },
-]
-
-# --------------------------------------------------------------------------------
-
-
-class JWTBearer(HTTPBearer):
-    async def __call__(self, request: Request) -> HTTPAuthorizationCredentials | None:
-        auth: HTTPAuthorizationCredentials | None = await super().__call__(request)
-        data = validate_token(auth.credentials, os.getenv("KEY"))
-        if data["email"] == None and data["email"] != "test@gmail.com":
-            raise HTTPException(status_code=403, detail="Invalid crendentials")
-
 
 # --------------------------------------------------------------------------------
 
@@ -68,37 +35,82 @@ class User(BaseModel):
 # --------------------------------------------------------------------------------
 
 
-class Movie(BaseModel):
-    id: Optional[int] = None
-    title: str = Field(..., min_length=1, max_length=25)
-    overview: str = Field(min_length=15, max_length=150)
-    year: int = Field(ge=2000, le=datetime.datetime.now().year)
-    rating: float = Field(ge=1, le=10)
-    category: str = Field(..., min_length=3, max_length=15)
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "title": "Película: ",
-                "overview": "Descripción de la película: .",
-                "year": 2004,
-                "rating": 9.3,
-                "category": "Drama",
-            },
-            "description": "This is an example of a movie object that can be used in the API.",
-            "externalDocs": {
-                "description": "More information about movies",
-                "url": "https://en.wikipedia.org/wiki/List_of_films_considered_the_best",
-            },
-        }
-
-
-# --------------------------------------------------------------------------------
-
-
 @app.get("/", tags=["Home"])
-def hello():
-    return HTMLResponse("<h1>Hello World</h1>")
+def welcome() -> HTMLResponse:
+    page: str = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Insert your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        header, main, footer {
+            padding: 20px;
+        }
+        
+        header {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+        }
+        
+        main {
+            flex: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        
+        footer {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px 0;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+    <title>Movie API Documentation</title>
+</head>
+<body>
+    <header>
+        <h1>Welcome to Movie API Documentation</h1>
+    </header>
+    <main>
+        <section>
+            <h2>Using the Movie API</h2>
+            <p>This API allows you to perform CRUD operations on movie data.</p>
+            <h3>API Base URL:</h3>
+            <p>http://localhost:5000</p>
+        </section>
+        <section>
+            <h2>Accessing API Documentation</h2>
+            <p>To access the API documentation and test endpoints, go to:</p>
+            <p><a href="/docs" target="_blank">Swagger Documentation</a></p>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2023 Movie API</p>
+    </footer>
+</body>
+</html>
+"""
+
+    return HTMLResponse(page, status_code=200)
 
 
 # --------------------------------------------------------------------------------
@@ -114,134 +126,7 @@ def login(user: User):
                 "token": create_token(user.dict(), os.getenv("KEY")),
             },
         )
-
-
-# --------------------------------------------------------------------------------
-
-
-@app.get(
-    "/movies",
-    tags=["movies"],
-    response_model=List[Movie],
-    status_code=status.HTTP_200_OK,
-    dependencies=[Depends(JWTBearer())],
-)
-def get_movies() -> List[Movie]:
-    db = session()
-    result = db.query(MovieModel).all()
-    return JSONResponse(status_code=200, content=jsonable_encoder(result))
-
-
-# --------------------------------------------------------------------------------
-
-
-@app.get(
-    "/movies/{id}",
-    tags=["movies"],
-    response_model=Movie,
-    status_code=status.HTTP_200_OK,
-)
-def get_movie(id: int = Path(ge=1, le=200)) -> Movie:
-    db = session # The handler_error middleware must appear here.
-    result = db.query(MovieModel).filter(MovieModel.id == id).first()
-    if not result:
-        raise HTTPException(status_code=404, detail="Movie not found.")
-    return JSONResponse(status_code=200, content=jsonable_encoder(result))
-
-
-# --------------------------------------------------------------------------------
-
-
-@app.get(
-    "/movies/",
-    tags=["movies"],
-    response_model=List[Movie],
-    status_code=status.HTTP_200_OK,
-)
-def get_movies_by_category(
-    category: str = Query(None, min_length=3, max_length=15)
-) -> List[Movie]:
-    db = session()
-    result = db.query(MovieModel).filter(MovieModel.category == category).all()
-    if not result:
-        raise HTTPException(status_code=404, detail="Movie not found.")
-    return JSONResponse(status_code=200, content=jsonable_encoder(result))
-
-
-# --------------------------------------------------------------------------------
-
-
-@app.post(
-    "/movies", tags=["movies"], response_model=dict, status_code=status.HTTP_201_CREATED
-)
-def create_movie(movie: Movie) -> dict:
-    db = session()
-    new_movie = MovieModel(**movie.dict())
-    db.add(new_movie)
-    db.commit()
-    movies.append(movie.dict())
-    return JSONResponse(content={"message": "Movie created"})
-
-
-# --------------------------------------------------------------------------------
-
-
-@app.put(
-    "/movies/{id}", tags=["movies"], response_model=dict, status_code=status.HTTP_200_OK
-)
-def update_movie(id: int, movie: Movie) -> dict:
-    db = session()
-    result = db.query(MovieModel).filter(MovieModel.id == id).first()
-    if not result:
-        raise HTTPException(status_code=404, detail="Movie not found.")
-    result.title = movie.title
-    result.overview = movie.overview
-    result.year = movie.year
-    result.rating = movie.rating
-    result.category = movie.category
-    db.commit()
-    return JSONResponse(status_code=200, content={"message": "Movie modified."})
-
-
-# --------------------------------------------------------------------------------
-
-
-@app.put(
-    "/movies/",
-    tags=["movies"],
-    response_model=List[Movie],
-    status_code=status.HTTP_200_OK,
-)
-def update_movies(ids: List[int], movie: Movie) -> List[Movie]:
-    updated_movies = []
-    found = False
-    for index, item in enumerate(movies):
-        if item["id"] in ids:
-            found = True
-            movies[index] = movie.dict()
-            updated_movies.append(movies[index])
-        else:
-            updated_movies.append(item)
-    if not found:
-        raise HTTPException(status_code=404, detail="Movie not found.")
-    return updated_movies
-
-
-# --------------------------------------------------------------------------------
-
-
-@app.delete(
-    "/movies/{id}", tags=["movies"], response_model=dict, status_code=status.HTTP_200_OK
-)
-def delete_movie(id: int) -> dict:
-    db = session()
-    result = db.query(MovieModel).filter(MovieModel.id == id).first()
-    if not result:
-        raise HTTPException(status_code=404, detail="Movie not found.")
-
-    db.delete(result)
-    db.commit()
-    return JSONResponse(content={"message": "Movie deleted."})
+    raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 # --------------------------------------------------------------------------------

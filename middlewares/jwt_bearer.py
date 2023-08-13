@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 from fastapi.security import HTTPBearer
 from fastapi import HTTPException, Request
-from fastapi.security.http import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security.http import HTTPAuthorizationCredentials
 from utils.jwt_manager import validate_token
 
 load_dotenv()

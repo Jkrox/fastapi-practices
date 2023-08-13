@@ -1,11 +1,10 @@
 from fastapi import APIRouter
-from fastapi import Depends, Path, Query, HTTPException, status, Request
+from fastapi import Depends, Path, Query, HTTPException, status
 from fastapi.responses import JSONResponse
-from fastapi.security.http import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from config.database import base, engine, session
-from middlewares import jwt_bearer
+from config.database import session
+from middlewares.jwt_bearer import JWTBearer
 from models.movie import Movie as MovieModel
 from fastapi.encoders import jsonable_encoder
 
@@ -46,7 +45,7 @@ class Movie(BaseModel):
     tags=["movies"],
     response_model=List[Movie],
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(jwt_bearer())],
+    dependencies=[Depends(JWTBearer())],
 )
 def get_movies() -> List[Movie]:
     db = session()
