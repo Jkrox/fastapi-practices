@@ -6,6 +6,7 @@ from typing import Optional, List
 from config.database import base, engine, session
 from models.movie import Movie as MovieModel
 from fastapi.encoders import jsonable_encoder
+from middlewares.error_handler import ErrorHandler
 
 from jwt_manager import create_token, validate_token
 from dotenv import load_dotenv
@@ -16,6 +17,8 @@ import os
 app = FastAPI()
 app.title = "Documentación test1"
 app.version = "0.0.1"
+
+app.add_middleware(ErrorHandler)
 
 base.metadata.create_all(bind=engine)
 
@@ -139,7 +142,7 @@ def get_movies() -> List[Movie]:
     status_code=status.HTTP_200_OK,
 )
 def get_movie(id: int = Path(ge=1, le=200)) -> Movie:
-    db = session()
+    db = session # The handler_error middleware must appear here.
     result = db.query(MovieModel).filter(MovieModel.id == id).first()
     if not result:
         raise HTTPException(status_code=404, detail="Movie not found.")
