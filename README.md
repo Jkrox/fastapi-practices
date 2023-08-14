@@ -14,8 +14,8 @@ This is a small REST API built with FastAPI that provides information about movi
 
 1. Clone the repository
 2. Install the dependencies with `pip install -r requirements.txt`
-3. Start the server with `uvicorn main:app --reload`
-4. Navigate to `http://localhost:8000/docs` to view the Swagger documentation
+3. Start the server with `uvicorn main:app --reload --port 5000 --host 0.0.0.0`
+4. Navigate to `http://localhost:5000/` to view the home page.
 
 ## API Endpoints
 
