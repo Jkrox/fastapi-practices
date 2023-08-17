@@ -7,8 +7,10 @@ from config.database import session
 from middlewares.jwt_bearer import JWTBearer
 from models.movie import Movie as MovieModel
 from fastapi.encoders import jsonable_encoder
+from services.movie import MovieService
 
 import datetime
+
 movie_router = APIRouter()
 
 
@@ -49,9 +51,9 @@ class Movie(BaseModel):
 )
 def get_movies() -> List[Movie]:
     db = session()
-    result = db.query(MovieModel).all()
+    result = MovieService(db).get_movies()
     return JSONResponse(status_code=200, content=jsonable_encoder(result))
-
+ 
 
 # --------------------------------------------------------------------------------
 
@@ -63,10 +65,8 @@ def get_movies() -> List[Movie]:
     status_code=status.HTTP_200_OK,
 )
 def get_movie(id: int = Path(ge=1, le=200)) -> Movie:
-    db = session  # The handler_error middleware must appear here.
-    result = db.query(MovieModel).filter(MovieModel.id == id).first()
-    if not result:
-        raise HTTPException(status_code=404, detail="Movie not found.")
+    db = session()  # The handler_error middleware must appear here.
+    result = MovieService(db).get_movie(id)
     return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
 
