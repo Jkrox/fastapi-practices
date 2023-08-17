@@ -1,14 +1,10 @@
-from fastapi import FastAPI, HTTPException, status
-from fastapi.responses import HTMLResponse, JSONResponse
-from pydantic import BaseModel, Field
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 from config.database import base, engine
 from middlewares.error_handler import ErrorHandler
 from routers.movie import movie_router
+from routers.user import user_router
 
-from utils.jwt_manager import create_token
-from dotenv import load_dotenv
-
-import os
 
 app = FastAPI()
 app.title = "FastAPI CRUD - Movies"
@@ -18,19 +14,9 @@ app.docs_url = "/docs"
 
 app.add_middleware(ErrorHandler)
 app.include_router(movie_router, prefix="/api/v1")
+app.include_router(user_router, prefix="/api/v1")
 
 base.metadata.create_all(bind=engine)
-
-# Load environment variables from .env file
-load_dotenv()
-
-# --------------------------------------------------------------------------------
-
-
-class User(BaseModel):
-    email: str = Field(..., min_length=5, max_length=50)
-    password: str = Field(..., min_length=5, max_length=50)
-
 
 # --------------------------------------------------------------------------------
 
@@ -111,22 +97,6 @@ def welcome() -> HTMLResponse:
 """
 
     return HTMLResponse(page, status_code=200)
-
-
-# --------------------------------------------------------------------------------
-
-
-@app.post("/login", tags=["login"])
-def login(user: User):
-    if user.email == "test@gmail.com" and user.password == "demokeys12345":
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={
-                "message": "Login successful",
-                "token": create_token(user.dict(), os.getenv("KEY")),
-            },
-        )
-    raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 # --------------------------------------------------------------------------------
