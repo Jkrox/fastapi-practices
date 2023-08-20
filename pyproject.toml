@@ -21,3 +21,7 @@ sqlalchemy = "^2.0.19"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+# pyproject.toml
+[tool.black]
+line-length = 79  # Ajusta la longitud máxima de línea según tus preferencias
