@@ -1,0 +1,20 @@
+name: Black-formatter
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run Black formatter (Apply changes)
+        uses: psf/black@stable
+        with:
+          args: "."  # Eliminamos "--check" para aplicar cambios automáticamente
+
+      - name: Run Black formatter (Check only)
+        uses: psf/black@stable
+        with:
+          args: "--check ."  # Agregamos "--check" para verificar sin cambios

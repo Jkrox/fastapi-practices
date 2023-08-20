@@ -4,11 +4,11 @@ This is a small REST API built with FastAPI that provides information about movi
 
 ## Features
 
-- Get a list of all movies
-- Get details about a specific movie
-- Add a new movie
-- Update an existing movie
-- Delete a movie
+- Get a list of all movies.
+- Get details about a specific movie.
+- Add a new movie.
+- Update an existing movie.
+- Delete a movie.
 
 ## Getting Started
 
