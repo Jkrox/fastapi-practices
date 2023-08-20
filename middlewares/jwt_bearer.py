@@ -8,6 +8,7 @@ from utils.jwt_manager import validate_token
 
 load_dotenv()
 
+
 class JWTBearer(HTTPBearer):
     async def __call__(self, request: Request) -> HTTPAuthorizationCredentials | None:
         auth: HTTPAuthorizationCredentials | None = await super().__call__(request)

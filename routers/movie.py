@@ -2,41 +2,15 @@ from fastapi import APIRouter
 from fastapi import Depends, Path, Query, HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import List
 from config.database import session
 from middlewares.jwt_bearer import JWTBearer
 from models.movie import Movie as MovieModel
 from fastapi.encoders import jsonable_encoder
 from services.movie import MovieService
-
-import datetime
+from schemas.movie import Movie
 
 movie_router = APIRouter()
-
-
-class Movie(BaseModel):
-    id: Optional[int] = None
-    title: str = Field(..., min_length=1, max_length=25)
-    overview: str = Field(min_length=15, max_length=150)
-    year: int = Field(ge=2000, le=datetime.datetime.now().year)
-    rating: float = Field(ge=1, le=10)
-    category: str = Field(..., min_length=3, max_length=15)
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "title": "Película: ",
-                "overview": "Descripción de la película: .",
-                "year": 2004,
-                "rating": 9.3,
-                "category": "Drama",
-            },
-            "description": "This is an example of a movie object that can be used in the API.",
-            "externalDocs": {
-                "description": "More information about movies",
-                "url": "https://en.wikipedia.org/wiki/List_of_films_considered_the_best",
-            },
-        }
 
 
 # --------------------------------------------------------------------------------
@@ -53,7 +27,7 @@ def get_movies() -> List[Movie]:
     db = session()
     result = MovieService(db).get_movies()
     return JSONResponse(status_code=200, content=jsonable_encoder(result))
- 
+
 
 # --------------------------------------------------------------------------------
 
@@ -83,9 +57,7 @@ def get_movies_by_category(
     category: str = Query(None, min_length=3, max_length=15)
 ) -> List[Movie]:
     db = session()
-    result = db.query(MovieModel).filter(MovieModel.category == category).all()
-    if not result:
-        raise HTTPException(status_code=404, detail="Movie not found.")
+    result = MovieService(db).get_movies_by_category(category)
     return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
 
@@ -97,9 +69,7 @@ def get_movies_by_category(
 )
 def create_movie(movie: Movie) -> dict:
     db = session()
-    new_movie = MovieModel(**movie.dict())
-    db.add(new_movie)
-    db.commit()
+    MovieService(db).create_movie(movie)
     return JSONResponse(content={"message": "Movie created"})
 
 

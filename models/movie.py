@@ -1,6 +1,8 @@
 from config.database import base
 from sqlalchemy import Column, Integer, String, Float
+
 # import datetime
+
 
 class Movie(base):
     __tablename__ = "movies"
