@@ -38,28 +38,23 @@ def welcome() -> HTMLResponse:
             flex-direction: column;
             min-height: 100vh;
         }
-        
         header, main, footer {
             padding: 20px;
         }
-        
         header {
             background-color: #333;
             color: #fff;
             text-align: center;
         }
-        
         main {
             flex: 1;
             max-width: 800px;
             margin: 0 auto;
         }
-        
         a {
             color: #007bff;
             text-decoration: none;
         }
-        
         footer {
             background-color: #333;
             color: #fff;

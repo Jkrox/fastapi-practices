@@ -1,7 +1,6 @@
 from fastapi import APIRouter
 from fastapi import Depends, Path, Query, HTTPException, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
 from typing import List
 from config.database import session
 from middlewares.jwt_bearer import JWTBearer
