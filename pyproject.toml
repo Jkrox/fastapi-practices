@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "fastapi course"
-version = "0.1.0"
-description = "Course to learn FastAPI and make my own API RestFul"
+name = "FastAPI course"
+version = "0.2.0"
+description = "Course to learn FastAPI and make my own API RestFul, adding Github actions"
 authors = ["Jkrox <jkrox@protonmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -16,6 +16,8 @@ black = "^23.3.0"
 pyjwt = "^2.7.0"
 python-dotenv = "^1"
 sqlalchemy = "^2.0.19"
+pre-commit = "^3.3.3"
+flake8 = "^6.1.0"
 
 
 [build-system]
