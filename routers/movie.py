@@ -64,7 +64,10 @@ def get_movies_by_category(
 
 
 @movie_router.post(
-    "/movies", tags=["movies"], response_model=dict, status_code=status.HTTP_201_CREATED
+    "/movies",
+    tags=["movies"],
+    response_model=dict,
+    status_code=status.HTTP_201_CREATED,
 )
 def create_movie(movie: Movie) -> dict:
     db = session()
@@ -76,20 +79,17 @@ def create_movie(movie: Movie) -> dict:
 
 
 @movie_router.put(
-    "/movies/{id}", tags=["movies"], response_model=dict, status_code=status.HTTP_200_OK
+    "/movies/{id}",
+    tags=["movies"],
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
 )
 def update_movie(id: int, movie: Movie) -> dict:
     db = session()
-    result = db.query(MovieModel).filter(MovieModel.id == id).first()
-    if not result:
-        raise HTTPException(status_code=404, detail="Movie not found.")
-    result.title = movie.title
-    result.overview = movie.overview
-    result.year = movie.year
-    result.rating = movie.rating
-    result.category = movie.category
-    db.commit()
-    return JSONResponse(status_code=200, content={"message": "Movie modified."})
+    MovieService(db).udpate_movie(id, movie)
+    return JSONResponse(
+        status_code=200, content={"message": "Movie modified."}
+    )
 
 
 # --------------------------------------------------------------------------------
@@ -124,21 +124,21 @@ def update_movies(ids: List[int], movie: Movie) -> List[Movie]:
     if not found:
         raise HTTPException(status_code=404, detail="Movie not found.")
 
-    return JSONResponse(status_code=200, content=jsonable_encoder(updated_movies))
+    return JSONResponse(
+        status_code=200, content=jsonable_encoder(updated_movies)
+    )
 
 
 # --------------------------------------------------------------------------------
 
 
 @movie_router.delete(
-    "/movies/{id}", tags=["movies"], response_model=dict, status_code=status.HTTP_200_OK
+    "/movies/{id}",
+    tags=["movies"],
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
 )
 def delete_movie(id: int) -> dict:
     db = session()
-    result = db.query(MovieModel).filter(MovieModel.id == id).first()
-    if not result:
-        raise HTTPException(status_code=404, detail="Movie not found.")
-
-    db.delete(result)
-    db.commit()
+    MovieService(db).delete_movie(id)
     return JSONResponse(content={"message": "Movie deleted."})

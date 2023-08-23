@@ -8,7 +8,7 @@ from typing import List
 
 class MovieService:
     def __init__(self, db: session) -> None:
-        self._db = db
+        self._db: session = db
 
     @property
     def db(self):
@@ -32,7 +32,9 @@ class MovieService:
 
     def get_movies_by_category(self, category: str) -> List[MovieModel]:
         result: List[MovieModel] | None = (
-            self._db.query(MovieModel).filter(MovieModel.category == category).all()
+            self._db.query(MovieModel)
+            .filter(MovieModel.category == category)
+            .all()
         )
         if not result:
             raise HTTPException(status_code=404, detail="Movie not found.")
@@ -41,5 +43,25 @@ class MovieService:
     def create_movie(self, movie: Movie) -> None:
         new_movie = MovieModel(**movie.dict())
         self._db.add(new_movie)
+        self._db.commit()
+        return
+
+    def udpate_movie(self, id: int, movie: Movie) -> None:
+        result: MovieModel | None = self.get_movie(
+            id
+        )  # We use the get_movie method to check if the movie exists.
+        result.title = movie.title
+        result.overview = movie.overview
+        result.year = movie.year
+        result.rating = movie.rating
+        result.category = movie.category
+        self._db.commit()
+        return
+
+    def delete_movie(self, id: int) -> None:
+        result: MovieModel | None = self.get_movie(
+            id
+        )  # We use the get_movie method to check if the movie exists.
+        self._db.delete(result)
         self._db.commit()
         return
