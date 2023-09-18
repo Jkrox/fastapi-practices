@@ -10,7 +10,7 @@ from services.movie import MovieService
 from schemas.movie import Movie
 
 movie_router = APIRouter()
-
+db = session()
 
 # --------------------------------------------------------------------------------
 
@@ -23,7 +23,6 @@ movie_router = APIRouter()
     dependencies=[Depends(JWTBearer())],
 )
 def get_movies() -> List[Movie]:
-    db = session()
     result = MovieService(db).get_movies()
     return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
@@ -38,7 +37,6 @@ def get_movies() -> List[Movie]:
     status_code=status.HTTP_200_OK,
 )
 def get_movie(id: int = Path(ge=1, le=200)) -> Movie:
-    db = session()  # The handler_error middleware must appear here.
     result = MovieService(db).get_movie(id)
     return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
@@ -55,7 +53,6 @@ def get_movie(id: int = Path(ge=1, le=200)) -> Movie:
 def get_movies_by_category(
     category: str = Query(None, min_length=3, max_length=15)
 ) -> List[Movie]:
-    db = session()
     result = MovieService(db).get_movies_by_category(category)
     return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
@@ -70,7 +67,6 @@ def get_movies_by_category(
     status_code=status.HTTP_201_CREATED,
 )
 def create_movie(movie: Movie) -> dict:
-    db = session()
     MovieService(db).create_movie(movie)
     return JSONResponse(content={"message": "Movie created"})
 
@@ -85,7 +81,6 @@ def create_movie(movie: Movie) -> dict:
     status_code=status.HTTP_200_OK,
 )
 def update_movie(id: int, movie: Movie) -> dict:
-    db = session()
     MovieService(db).udpate_movie(id, movie)
     return JSONResponse(
         status_code=200, content={"message": "Movie modified."}
@@ -102,7 +97,6 @@ def update_movie(id: int, movie: Movie) -> dict:
     status_code=status.HTTP_200_OK,
 )
 def update_movies(ids: List[int], movie: Movie) -> List[Movie]:
-    db = session()
     updated_movies = []
     found = False
 
